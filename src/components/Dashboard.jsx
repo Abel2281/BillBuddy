@@ -2,25 +2,19 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 
 const Dashboard = () => {
-  const [bills, setBills] = useState([]);
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState("You");
-  const [participants, setParticipants] = useState("");
-
-  const handleAddBill = (e) => {
-    e.preventDefault();
-    const newBill = { description, amount, paidBy, participants: participants.split(",") };
-    setBills([...bills, newBill]);
-    setDescription("");
-    setAmount("");
-    setParticipants("");
-  };
+  const [bills, setBills] = useState([
+    { id: 1, description: "Dinner", amount: 60, paidBy: "You", splitBetween: ["Alice", "Bob"], date: "2025-03-10" },
+    { id: 2, description: "Rent", amount: 1200, paidBy: "Alice", splitBetween: ["You", "Bob"], date: "2025-03-01" },
+  ]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.location.href = "/login";
   };
+
+  // Dummy debt calculation (replace with real logic later)
+  const [youOwe,setyouOwe] = useState(400); 
+  const [youAreOwed,setyouAreOwed] = useState(20); 
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-teal-600 via-cyan-800 to-navy-900 text-gray-800">
@@ -35,129 +29,71 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
       <main className="max-w-6xl mx-auto p-6">
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+        <motion.section
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <motion.div
-            className="bg-green-100 p-4 rounded-lg shadow hover:shadow-xl hover:-translate-y-1 transition duration-300"
+            className="bg-green-100 p-6 rounded-lg shadow-md hover:shadow-xl transition duration-300"
             whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
           >
-            <h3 className="text-lg font-semibold">You Are Owed</h3>
-            <p className="text-2xl">$50.00</p>
+            <h3 className="text-lg font-semibold text-green-800">You Are Owed</h3>
+            <p className="text-3xl font-bold text-green-600">${youAreOwed.toFixed(2)}</p>
           </motion.div>
           <motion.div
-            className="bg-red-100 p-4 rounded-lg shadow hover:shadow-xl hover:-translate-y-1 transition duration-300"
+            className="bg-red-100 p-6 rounded-lg shadow-md hover:shadow-xl transition duration-300"
             whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
           >
-            <h3 className="text-lg font-semibold">You Owe</h3>
-            <p className="text-2xl">$20.00</p>
+            <h3 className="text-lg font-semibold text-red-800">You Owe</h3>
+            <p className="text-3xl font-bold text-red-700">${youOwe.toFixed(2)}</p>
           </motion.div>
-          <motion.div
-            className="bg-blue-100 p-4 rounded-lg shadow hover:shadow-xl hover:-translate-y-1 transition duration-300"
-            whileHover={{ scale: 1.03 }}
-          >
-            <h3 className="text-lg font-semibold">Net Balance</h3>
-            <p className="text-2xl">+$30.00</p>
-          </motion.div>
-        </motion.div>
+        </motion.section>
 
-        <motion.div
-          className="bg-white p-6 rounded-lg shadow mb-6 hover:shadow-xl transition duration-300"
+        <motion.section
+          className="bg-blue-100 p-6 rounded-lg shadow-md hover:shadow-xl transition duration-300"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{  duration: 0.5 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <h2 className="text-xl font-bold mb-4">Add a New Bill</h2>
-          <form onSubmit={handleAddBill}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <motion.input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description"
-                className="p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
-                required
-                whileHover={{ scale: 1.02 }}
-              />
-              <motion.input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Amount"
-                className="p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
-                required
-                whileHover={{ scale: 1.02 }}
-              />
-              <motion.input
-                type="text"
-                value={paidBy}
-                onChange={(e) => setPaidBy(e.target.value)}
-                placeholder="Paid By"
-                className="p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
-                required
-                whileHover={{ scale: 1.02 }}
-              />
-              <motion.input
-                type="text"
-                value={participants}
-                onChange={(e) => setParticipants(e.target.value)}
-                placeholder="Participants (comma-separated)"
-                className="p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
-                required
-                whileHover={{ scale: 1.02 }}
-              />
-            </div>
-            <div className="flex justify-center mt-4">
-              <motion.button
-                type="submit"
-                className="w-1/2 bg-indigo-600 text-white p-2 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Add Bill
-              </motion.button>
-            </div>
-          </form>
-        </motion.div>
-
-        {/* Bill List */}
-        <motion.div
-          className="bg-white p-6 rounded-lg shadow hover:shadow-xl transition duration-300"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <h2 className="text-xl font-bold mb-4">Your Bills</h2>
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-3">Description</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Paid By</th>
-                <th className="p-3">Participants</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bills.map((bill, index) => (
-                <motion.tr
-                  key={index}
-                  className="border-t hover:bg-gray-50"
-                  whileHover={{ scale: 1.01 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <td className="p-3">{bill.description}</td>
-                  <td className="p-3">${bill.amount}</td>
-                  <td className="p-3">{bill.paidBy}</td>
-                  <td className="p-3">{bill.participants.join(", ")}</td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </motion.div>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Bill List</h2>
+          <div className="w-full">
+            <table className="w-full table-auto text-left">
+              <thead>
+                <tr className="bg-blue-200 text-gray-700">
+                  <th className="p-3 font-semibold min-w-0">Description</th>
+                  <th className="p-3 font-semibold min-w-0">Amount</th>
+                  <th className="p-3 font-semibold min-w-0">Paid By</th>
+                  <th className="p-3 font-semibold min-w-0">Split Between</th>
+                  <th className="p-3 font-semibold min-w-0">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bills.map((bill) => (
+                  <motion.tr
+                    key={bill.id}
+                    className="border-t hover:bg-violet-100 transition duration-200"
+                    whileHover={{ scale: 1.01 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <td className="p-3 truncate">{bill.description}</td>
+                    <td className="p-3 truncate">${bill.amount.toFixed(2)}</td>
+                    <td className="p-3 truncate">{bill.paidBy}</td>
+                    <td className="p-3 truncate">{bill.splitBetween.join(", ")}</td>
+                    <td className="p-3 truncate">{bill.date}</td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.section>
       </main>
     </div>
   );
