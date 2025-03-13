@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -24,7 +25,9 @@ const Register = () => {
         password,
       });
       console.log("Registration successful:", response.data);
-      window.location.href = "/login";
+      localStorage.setItem("token", response.data.token);
+      setIsAuthenticated(true);
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error("Registration failed:", err);
       setError(err.response?.data?.message || "Registration failed");

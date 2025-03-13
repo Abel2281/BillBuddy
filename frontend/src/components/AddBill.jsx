@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const AddBill = () => {
   const [description, setDescription] = useState("");
@@ -8,8 +9,9 @@ const AddBill = () => {
   const [paidBy, setPaidBy] = useState("You");
   const [participants, setParticipants] = useState([]);
   const [debtUpdate, setDebtUpdate] = useState({ youOwe: 0, youAreOwed: 0 });
-  const [availableUsers, setAvailableUsers] = useState(["You", "Alice", "Bob", "Charlie"]); // Dynamic list
-  const [newParticipant, setNewParticipant] = useState(""); // For adding new participants
+  const [availableUsers, setAvailableUsers] = useState(["You", "Alice", "Bob", "Charlie"]);
+  const [newParticipant, setNewParticipant] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleParticipantChange = (user) => {
@@ -23,7 +25,7 @@ const AddBill = () => {
   const handleAddParticipant = () => {
     if (newParticipant.trim() && !availableUsers.includes(newParticipant.trim())) {
       setAvailableUsers([...availableUsers, newParticipant.trim()]);
-      setNewParticipant(""); // Clear input after adding
+      setNewParticipant("");
     }
   };
 
@@ -50,18 +52,29 @@ const AddBill = () => {
     updateDebt(participants);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newBill = {
-      id: Date.now(),
-      description,
-      amount: parseFloat(amount),
-      paidBy,
-      splitBetween: participants,
-      date: new Date().toISOString().split("T")[0],
-      isPaid: false,
-    };
-    navigate("/dashboard", { state: { newBill } });
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:5000/api/bills",
+        {
+          description,
+          amount: parseFloat(amount),
+          paidByUsername: paidBy,
+          splitBetweenUsernames: participants,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.msg || "Failed to add bill");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   return (
@@ -73,14 +86,24 @@ const AddBill = () => {
             <Link to="/dashboard" className="mr-4 text-sm hover:underline">
               Dashboard
             </Link>
-            <Link to="/login" className="text-sm hover:underline" onClick={() => localStorage.removeItem("token")}>
+            <button onClick={handleLogout} className="text-sm hover:underline">
               Logout
-            </Link>
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
+        {error && (
+          <motion.p
+            className="text-red-500 text-sm mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {error}
+          </motion.p>
+        )}
         <motion.section
           className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition duration-300"
           initial={{ opacity: 0, y: 20 }}

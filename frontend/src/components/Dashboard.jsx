@@ -1,27 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const Dashboard = () => {
-  const location = useLocation();
-  const newBill = location.state?.newBill;
-  const [bills, setBills] = useState([
-    { id: 1, description: "Dinner", amount: 60, paidBy: "You", splitBetween: ["Alice", "Bob"], date: "2025-03-10", isPaid: false },
-    { id: 2, description: "Rent", amount: 1200, paidBy: "Alice", splitBetween: ["You", "Bob"], date: "2025-03-01", isPaid: false },
-    ...(newBill ? [newBill] : []),
-  ]);
+const Dashboard = ({ setIsAuthenticated }) => {
+  const [bills, setBills] = useState([]);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchBills = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:5000/api/bills", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setBills(response.data);
+      } catch (err) {
+        setError(err.response?.data?.msg || "Failed to fetch bills");
+      }
+    };
+    fetchBills();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    setIsAuthenticated(false);
+    navigate("/login");
   };
 
-  const togglePaidStatus = (billId) => {
-    setBills((prevBills) =>
-      prevBills.map((bill) =>
-        bill.id === billId ? { ...bill, isPaid: !bill.isPaid } : bill
-      )
-    );
+  const togglePaidStatus = async (billId) => {
+    try {
+      const bill = bills.find((b) => b._id === billId);
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `http://localhost:5000/api/bills/${billId}`,
+        { isPaid: !bill.isPaid },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setBills(bills.map((b) => (b._id === billId ? response.data : b)));
+    } catch (err) {
+      setError(err.response?.data?.msg || "Failed to update bill");
+    }
   };
 
   const calculateDebt = () => {
@@ -32,9 +52,9 @@ const Dashboard = () => {
       if (bill.isPaid) return;
       const splitAmount = bill.amount / bill.splitBetween.length;
 
-      if (bill.paidBy === "You") {
-        youAreOwed += splitAmount * (bill.splitBetween.length - (bill.splitBetween.includes("You") ? 1 : 0));
-      } else if (bill.splitBetween.includes("You")) {
+      if (bill.paidBy.username === "You") {
+        youAreOwed += splitAmount * (bill.splitBetween.length - (bill.splitBetween.some(user => user.username === "You") ? 1 : 0));
+      } else if (bill.splitBetween.some(user => user.username === "You")) {
         youOwe += splitAmount;
       }
     });
@@ -61,6 +81,16 @@ const Dashboard = () => {
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
+        {error && (
+          <motion.p
+            className="text-red-500 text-sm mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {error}
+          </motion.p>
+        )}
         <motion.section
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -106,33 +136,41 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {bills.map((bill) => (
-                  <motion.tr
-                    key={bill.id}
-                    className={`border-t hover:bg-gray-50 transition duration-200 ${bill.isPaid ? "line-through text-gray-500" : ""}`}
-                    whileHover={{ scale: 1.01 }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <td className="p-3 truncate">{bill.description}</td>
-                    <td className="p-3 truncate">${bill.amount.toFixed(2)}</td>
-                    <td className="p-3 truncate">{bill.paidBy}</td>
-                    <td className="p-3 truncate">{bill.splitBetween.join(", ")}</td>
-                    <td className="p-3 truncate">{bill.date}</td>
-                    <td className="p-3 truncate">{bill.isPaid ? "Paid" : "Pending"}</td>
-                    <td className="p-3">
-                      <motion.button
-                        onClick={() => togglePaidStatus(bill.id)}
-                        className={`px-2 py-1 rounded text-white text-sm ${bill.isPaid ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {bill.isPaid ? "Undo" : "Mark Paid"}
-                      </motion.button>
+                {bills.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="p-3 text-center text-gray-500">
+                      No bills found.
                     </td>
-                  </motion.tr>
-                ))}
+                  </tr>
+                ) : (
+                  bills.map((bill) => (
+                    <motion.tr
+                      key={bill._id}
+                      className={`border-t hover:bg-gray-50 transition duration-200 ${bill.isPaid ? "line-through text-gray-500" : ""}`}
+                      whileHover={{ scale: 1.01 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <td className="p-3 truncate">{bill.description}</td>
+                      <td className="p-3 truncate">${bill.amount.toFixed(2)}</td>
+                      <td className="p-3 truncate">{bill.paidBy?.username}</td>
+                      <td className="p-3 truncate">{bill.splitBetween.map(user => user.username).join(", ")}</td>
+                      <td className="p-3 truncate">{new Date(bill.date).toISOString().split("T")[0]}</td>
+                      <td className="p-3 truncate">{bill.isPaid ? "Paid" : "Pending"}</td>
+                      <td className="p-3">
+                        <motion.button
+                          onClick={() => togglePaidStatus(bill._id)}
+                          className={`px-2 py-1 rounded text-white text-sm ${bill.isPaid ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {bill.isPaid ? "Undo" : "Mark Paid"}
+                        </motion.button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

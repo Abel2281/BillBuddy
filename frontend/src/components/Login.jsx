@@ -1,42 +1,32 @@
 import React, { useState } from "react";
 import axios from "axios";
-import {motion} from 'framer-motion';
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
-const Login = () => {
+const Login = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Still prevents page reload
-    // try {
-    //   const response = await axios.post("http://localhost:5000/api/auth/login", {
-    //     username,
-    //     password,
-    //   });
-    //   // Assuming the API returns a token
-    //   localStorage.setItem("token", response.data.token); // Store JWT
-    //   console.log("Login successful:", response.data);
-    //   // Redirect to dashboard or another page
-    //   window.location.href = "/dashboard";
-    // } catch (err) {
-    //   console.error("Login failed:", err);
-    //   setError("Invalid username or password"); // Display error to user
-    // }
-    if (username === "test" && password === "1234") {
-        localStorage.setItem("token", "dummy-token-123"); 
-        console.log("Login successful");
-        window.location.href = "/dashboard"; 
-      } else{
-        setError("Invalid username or password");
-        console.error("Login failed: Invalid credentials");
-      }
+    e.preventDefault();
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        username,
+        password,
+      });
+      localStorage.setItem("token", response.data.token);
+      setIsAuthenticated(true);
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError(err.response?.data?.msg || "Login failed");
+    }
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-600 via-indigo-700 to-blue-950">
       <motion.div 
-        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md transform transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1 "
+        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md transform transition-all hover:scale-105 hover:shadow-2xl hover:-translate-y-1"
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -48,6 +38,16 @@ const Login = () => {
         >
           Welcome to BillBuddy
         </motion.h2>
+        {error && (
+          <motion.p
+            className="text-red-500 text-sm mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {error}
+          </motion.p>
+        )}
         <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label
@@ -65,7 +65,7 @@ const Login = () => {
               placeholder="Enter your username"
               required
               whileHover={{ scale: 1.02 }}
-              transition={{  duration: 0.2 }}
+              transition={{ duration: 0.2 }}
             />
           </div>
 
@@ -85,7 +85,7 @@ const Login = () => {
               placeholder="Enter your password"
               required
               whileHover={{ scale: 1.02 }}
-              transition={{  duration: 0.2 }}
+              transition={{ duration: 0.2 }}
             />
           </div>
 
@@ -107,9 +107,9 @@ const Login = () => {
                 transition={{ duration: 0.2 }}
             >
               Don't have an account?{" "}
-              <a href="/register" className="text-indigo-600 font-medium hover:underline">
+              <Link to="/register" className="text-indigo-600 font-medium hover:underline">
                 Register
-              </a>
+              </Link>
             </motion.p>
           </div>
         </form>
