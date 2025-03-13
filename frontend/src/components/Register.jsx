@@ -3,7 +3,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-const Register = () => {
+const Register = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,7 +30,7 @@ const Register = () => {
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("Registration failed:", err);
-      setError(err.response?.data?.message || "Registration failed");
+      setError(err.response?.data?.msg || "Registration failed");
     }
   };
 
@@ -147,9 +147,9 @@ const Register = () => {
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
-              <a href="/login" className="text-indigo-600 font-medium hover:underline">
+              <Link to="/login" className="text-indigo-600 font-medium hover:underline">
                 Login
-              </a>
+              </Link>
             </p>
           </div>
         </form>
