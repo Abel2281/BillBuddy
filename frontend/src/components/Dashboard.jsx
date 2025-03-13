@@ -5,9 +5,28 @@ import axios from "axios";
 
 const Dashboard = ({ setIsAuthenticated }) => {
   const [bills, setBills] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:5000/api/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCurrentUser(response.data.username);
+      } catch (err) {
+        setError("Failed to fetch current user");
+        console.error(err);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  // Fetch bills
   useEffect(() => {
     const fetchBills = async () => {
       try {
@@ -45,21 +64,33 @@ const Dashboard = ({ setIsAuthenticated }) => {
   };
 
   const calculateDebt = () => {
-    let youOwe = 0;
-    let youAreOwed = 0;
+    if (!currentUser) return { youOwe: 0, youAreOwed: 0 };
+
+    let totalOwed = 0;
+    let totalOwe = 0;
 
     bills.forEach((bill) => {
-      if (bill.isPaid) return;
       const splitAmount = bill.amount / bill.splitBetween.length;
+      const isCurrentUserPaidBy = bill.paidBy.username === currentUser;
+      const isCurrentUserInSplit = bill.splitBetween.some(user => user.username === currentUser);
 
-      if (bill.paidBy.username === "You") {
-        youAreOwed += splitAmount * (bill.splitBetween.length - (bill.splitBetween.some(user => user.username === "You") ? 1 : 0));
-      } else if (bill.splitBetween.some(user => user.username === "You")) {
-        youOwe += splitAmount;
+      if (!bill.isPaid) {
+        if (isCurrentUserPaidBy) {
+          // Current user paid the bill, so they are owed by others
+          totalOwed += splitAmount * (bill.splitBetween.length - (isCurrentUserInSplit ? 1 : 0));
+        } else if (isCurrentUserInSplit) {
+          // Current user is splitting the bill, so they owe their share
+          totalOwe += splitAmount;
+        }
       }
     });
 
-    return { youOwe, youAreOwed };
+    // Netting: If you are owed more than you owe, you have a positive balance
+    const netDebt = totalOwed - totalOwe;
+    return {
+      youOwe: Math.max(0, -netDebt), // You owe if net is negative
+      youAreOwed: Math.max(0, netDebt), // You are owed if net is positive
+    };
   };
 
   const { youOwe, youAreOwed } = calculateDebt();
