@@ -1,17 +1,16 @@
-import './App.css'
-import './index.css'
+import React from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
-import Login from './components/Login'
-import Register from './components/Register'
-import Dashboard from './components/Dashboard'
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Dashboard from "./components/Dashboard";
+import AddBill from "./components/AddBill";
+
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem("token");
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
 
 function App() {
-
-  const ProtectedRoute = ({ children }) => {
-    const isAuthenticated = localStorage.getItem("token");
-    return isAuthenticated ? children : <Navigate to="/login" />;
-  };
-
   return (
     <Router>
       <div className="App">
@@ -26,11 +25,19 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/add-bill"
+            element={
+              <ProtectedRoute>
+                <AddBill />
+              </ProtectedRoute>
+            }
+/>
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </div>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;
