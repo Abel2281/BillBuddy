@@ -1,18 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const AddBill = () => {
+const AddBill = ({ setIsAuthenticated }) => {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState("You");
+  const [paidBy, setPaidBy] = useState("");
   const [participants, setParticipants] = useState([]);
   const [debtUpdate, setDebtUpdate] = useState({ youOwe: 0, youAreOwed: 0 });
-  const [availableUsers, setAvailableUsers] = useState(["You", "Alice", "Bob", "Charlie"]);
+  const [availableUsers, setAvailableUsers] = useState([]);
   const [newParticipant, setNewParticipant] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // Fetch available users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:5000/api/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAvailableUsers(response.data.map(user => user.username));
+        // Set default paidBy to the first user (e.g., current user)
+        if (response.data.length > 0) setPaidBy(response.data[0].username);
+      } catch (err) {
+        setError("Failed to fetch users");
+        console.error(err);
+        // Fallback to mock data if API fails
+        setAvailableUsers(["You", "Alice", "Bob", "Charlie"]);
+        setPaidBy("You");
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleParticipantChange = (user) => {
     const updatedParticipants = participants.includes(user)
@@ -25,12 +47,14 @@ const AddBill = () => {
   const handleAddParticipant = () => {
     if (newParticipant.trim() && !availableUsers.includes(newParticipant.trim())) {
       setAvailableUsers([...availableUsers, newParticipant.trim()]);
+      setParticipants([...participants, newParticipant.trim()]);
       setNewParticipant("");
+      updateDebt([...participants, newParticipant.trim()]);
     }
   };
 
   const updateDebt = (selectedParticipants) => {
-    if (!amount || selectedParticipants.length === 0) {
+    if (!amount || !paidBy || selectedParticipants.length === 0) {
       setDebtUpdate({ youOwe: 0, youAreOwed: 0 });
       return;
     }
@@ -38,8 +62,8 @@ const AddBill = () => {
     let youOwe = 0;
     let youAreOwed = 0;
 
-    if (paidBy === "You") {
-      youAreOwed = splitAmount * (selectedParticipants.length - 1);
+    if (paidBy === "You" || paidBy === currentUser) { // Assuming currentUser is set elsewhere
+      youAreOwed = splitAmount * (selectedParticipants.length - (selectedParticipants.includes("You") ? 1 : 0));
     } else if (selectedParticipants.includes("You")) {
       youOwe = splitAmount;
     }
@@ -74,6 +98,7 @@ const AddBill = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    setIsAuthenticated(false);
     navigate("/login");
   };
 
@@ -149,9 +174,14 @@ const AddBill = () => {
                 <select
                   id="paidBy"
                   value={paidBy}
-                  onChange={(e) => setPaidBy(e.target.value)}
+                  onChange={(e) => {
+                    setPaidBy(e.target.value);
+                    updateDebt(participants);
+                  }}
                   className="w-full p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
+                  required
                 >
+                  <option value="" disabled>Select payer</option>
                   {availableUsers.map((user) => (
                     <option key={user} value={user}>
                       {user}
