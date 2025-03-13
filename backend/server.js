@@ -27,3 +27,12 @@ app.use("/api", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+process.on("SIGINT", async () => {
+  console.log("Shutting down server...");
+  await mongoose.connection.close();
+  server.close(() => {
+    console.log("Server stopped.");
+    process.exit(0);
+  });
+});
