@@ -11,7 +11,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<h2>Welcome to BillBuddy</h2>} />
+        <Route path="/" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
         <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
         <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
         <Route
