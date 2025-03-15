@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -66,8 +66,8 @@ const Dashboard = ({ setIsAuthenticated }) => {
   const calculateDebt = () => {
     if (!currentUser) return { youOwe: 0, youAreOwed: 0 };
 
-    let totalOwed = 0;
-    let totalOwe = 0;
+    let totalOwed = 0; 
+    let totalOwe = 0; 
 
     bills.forEach((bill) => {
       const splitAmount = bill.amount / bill.splitBetween.length;
@@ -76,24 +76,24 @@ const Dashboard = ({ setIsAuthenticated }) => {
 
       if (!bill.isPaid) {
         if (isCurrentUserPaidBy) {
-          // Current user paid the bill, so they are owed by others
+          // Current user paid the bill, others owe their share
           totalOwed += splitAmount * (bill.splitBetween.length - (isCurrentUserInSplit ? 1 : 0));
-        } else if (isCurrentUserInSplit) {
-          // Current user is splitting the bill, so they owe their share
+        }
+        if (isCurrentUserInSplit && !isCurrentUserPaidBy) {
+          // Current user owes their share if they didn’t pay
           totalOwe += splitAmount;
         }
       }
     });
 
-    // Netting: If you are owed more than you owe, you have a positive balance
-    const netDebt = totalOwed - totalOwe;
     return {
-      youOwe: Math.max(0, -netDebt), // You owe if net is negative
-      youAreOwed: Math.max(0, netDebt), // You are owed if net is positive
+      youOwe: totalOwe,
+      youAreOwed: totalOwed,
     };
   };
 
-  const { youOwe, youAreOwed } = calculateDebt();
+  // Use useMemo to recalculate debt when bills or currentUser changes
+  const { youOwe, youAreOwed } = useMemo(calculateDebt, [bills, currentUser]);
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-teal-600 via-cyan-800 to-navy-900 text-gray-800">
