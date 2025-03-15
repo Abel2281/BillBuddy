@@ -22,7 +22,7 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
-router.post("/", authenticateToken, async (req, res) => {
+router.post("/add-bill", authenticateToken, async (req, res) => {
   const { description, amount, paidByUsername, splitBetweenUsernames } = req.body;
   try {
     const paidBy = await User.findOne({ username: paidByUsername });

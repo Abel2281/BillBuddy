@@ -23,7 +23,6 @@ const AddBill = ({ setIsAuthenticated }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAvailableUsers(response.data.map(user => user.username));
-        // Set default paidBy to the first user (e.g., current user)
         if (response.data.length > 0) setPaidBy(response.data[0].username);
       } catch (err) {
         setError("Failed to fetch users");
