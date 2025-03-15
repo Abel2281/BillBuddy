@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import {jwtDecode} from "jwt-decode";
 
 const AddBill = ({ setIsAuthenticated }) => {
   const [description, setDescription] = useState("");
@@ -10,9 +11,20 @@ const AddBill = ({ setIsAuthenticated }) => {
   const [participants, setParticipants] = useState([]);
   const [debtUpdate, setDebtUpdate] = useState({ youOwe: 0, youAreOwed: 0 });
   const [availableUsers, setAvailableUsers] = useState([]);
-  const [newParticipant, setNewParticipant] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+  let currentUser = "You"; // Fallback value
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      currentUser = decoded.username; 
+    } catch (err) {
+      console.error("Invalid token:", err);
+      setError("Invalid authentication token");
+    }
+  }
 
   // Fetch available users
   useEffect(() => {
@@ -27,7 +39,6 @@ const AddBill = ({ setIsAuthenticated }) => {
       } catch (err) {
         setError("Failed to fetch users");
         console.error(err);
-        // Fallback to mock data if API fails
         setAvailableUsers(["You", "Alice", "Bob", "Charlie"]);
         setPaidBy("You");
       }
@@ -35,21 +46,15 @@ const AddBill = ({ setIsAuthenticated }) => {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    updateDebt(participants);
+  }, [amount, paidBy, participants]);
+
   const handleParticipantChange = (user) => {
     const updatedParticipants = participants.includes(user)
       ? participants.filter((p) => p !== user)
       : [...participants, user];
     setParticipants(updatedParticipants);
-    updateDebt(updatedParticipants);
-  };
-
-  const handleAddParticipant = () => {
-    if (newParticipant.trim() && !availableUsers.includes(newParticipant.trim())) {
-      setAvailableUsers([...availableUsers, newParticipant.trim()]);
-      setParticipants([...participants, newParticipant.trim()]);
-      setNewParticipant("");
-      updateDebt([...participants, newParticipant.trim()]);
-    }
   };
 
   const updateDebt = (selectedParticipants) => {
@@ -61,18 +66,13 @@ const AddBill = ({ setIsAuthenticated }) => {
     let youOwe = 0;
     let youAreOwed = 0;
 
-    if (paidBy === "You" || paidBy === currentUser) { // Assuming currentUser is set elsewhere
-      youAreOwed = splitAmount * (selectedParticipants.length - (selectedParticipants.includes("You") ? 1 : 0));
-    } else if (selectedParticipants.includes("You")) {
+    if (paidBy === currentUser) {
+      youAreOwed = splitAmount * (selectedParticipants.length - (selectedParticipants.includes(currentUser) ? 1 : 0));
+    } else if (selectedParticipants.includes(currentUser)) {
       youOwe = splitAmount;
     }
 
     setDebtUpdate({ youOwe, youAreOwed });
-  };
-
-  const handleAmountChange = (e) => {
-    setAmount(e.target.value);
-    updateDebt(participants);
   };
 
   const handleSubmit = async (e) => {
@@ -159,7 +159,7 @@ const AddBill = ({ setIsAuthenticated }) => {
                   type="number"
                   id="amount"
                   value={amount}
-                  onChange={handleAmountChange}
+                  onChange={(e) => setAmount(e.target.value)}
                   className="w-full p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
                   placeholder="e.g., 50.00"
                   step="0.01"
@@ -173,10 +173,7 @@ const AddBill = ({ setIsAuthenticated }) => {
                 <select
                   id="paidBy"
                   value={paidBy}
-                  onChange={(e) => {
-                    setPaidBy(e.target.value);
-                    updateDebt(participants);
-                  }}
+                  onChange={(e) => setPaidBy(e.target.value)}
                   className="w-full p-3 border rounded-lg hover:border-indigo-400 transition duration-200"
                   required
                 >
@@ -203,24 +200,6 @@ const AddBill = ({ setIsAuthenticated }) => {
                       {user}
                     </label>
                   ))}
-                </div>
-                <div className="mt-2 flex items-center">
-                  <input
-                    type="text"
-                    value={newParticipant}
-                    onChange={(e) => setNewParticipant(e.target.value)}
-                    className="w-full p-2 border rounded-lg hover:border-indigo-400 transition duration-200"
-                    placeholder="Add new participant"
-                  />
-                  <motion.button
-                    type="button"
-                    onClick={handleAddParticipant}
-                    className="ml-2 bg-teal-600 text-white p-2 rounded-lg hover:bg-teal-700 transition duration-200"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Add
-                  </motion.button>
                 </div>
               </motion.div>
             </div>
