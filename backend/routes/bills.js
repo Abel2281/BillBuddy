@@ -1,5 +1,5 @@
 import express from "express";
-import authenticateToken from "../middleware/auth.js"; // Moved auth to middleware
+import authenticateToken from "../middleware/auth.js"; 
 import Bill from "../models/Bill.models.js";
 import User from "../models/User.models.js";
 
@@ -7,7 +7,13 @@ const router = express.Router();
 
 router.get("/", authenticateToken, async (req, res) => {
   try {
-    const bills = await Bill.find()
+    const userId = req.user.id; 
+    const bills = await Bill.find({
+      $or: [
+        { paidBy: userId },              
+        { splitBetween: userId },    
+      ],
+    })
       .populate("paidBy", "username")
       .populate("splitBetween", "username");
     res.json(bills);
