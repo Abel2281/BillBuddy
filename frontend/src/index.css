@@ -1,2 +1,6 @@
-
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 @import "tailwindcss";
+
+.font-orbitron {
+    font-family: 'Orbitron', sans-serif;
+  }
