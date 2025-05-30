@@ -2,6 +2,23 @@ BillBuddy
 BillBuddy is a full-stack web application designed to simplify bill splitting among friends or groups. Users can register, log in, add bills, track who paid and who owes what, and mark bills as paid. The application features dynamic user management and accurate debt calculations, making it easy to manage shared expenses.
 Table of Contents
 
+
+### Loadingpage
+![Loadingpage](frontend/src/assets/LoadingScreen.png)
+
+### LoginPage
+![Loginpage](frontend/src/assets/Login.png)
+
+### SignupPage
+![Signuppage](frontend/src/assets/SignUp.png)
+
+### Dashboard
+![Dashboard](frontend/src/assets/Dashboard.png)
+
+### AddBills
+![AddBills](frontend/src/assets/AddBills.png)
+
+
 Features
 Tech Stack  
 Prerequisites
